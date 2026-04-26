@@ -9,6 +9,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.Optional;
+
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -58,12 +61,25 @@ public class UserServiceTest {
 
         when(userRepository.existsByEmail(TEST_USER_EMAIL)).thenReturn(true);
 
-        assertThrows(UserAlreadyExists.class, () -> {
-            userService.save(user);
-        });
+        assertThrows(UserAlreadyExists.class, () -> userService.save(user));
 
         verify(passwordEncoder, never()).encode(any());
         verify(userRepository, never()).save(any());
     }
 
+    @Test
+    @DisplayName("Must return a user.")
+    void mustReturnAUser(){
+        User user = new User();
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        User found = userService.loadUserById(1L);
+        assertNotNull(found);
+    }
+
+    @Test
+    @DisplayName("Must thow UserNotFound exception.")
+    void mustThrowUserNotFound(){
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        assertThrows(UserNotFound.class, () -> userService.loadUserById(1L));
+    }
 }
