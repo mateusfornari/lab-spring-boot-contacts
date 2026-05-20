@@ -1,9 +1,14 @@
 package br.dev.fornarilabs.contacts.controller;
 
 import br.dev.fornarilabs.contacts.config.SecurityConfig;
+import br.dev.fornarilabs.contacts.config.SecurityFilter;
 import br.dev.fornarilabs.contacts.domain.User;
 import br.dev.fornarilabs.contacts.service.UserAlreadyExists;
 import br.dev.fornarilabs.contacts.service.UserService;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,20 +16,27 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.mockito.Mockito.doAnswer;
+
 
 @WebMvcTest(UserController.class)
 @Import(SecurityConfig.class)
@@ -39,16 +51,28 @@ public class UserControllerTest {
     @MockitoBean
     private UserService userService;
 
+    @MockitoBean
+    private SecurityFilter securityFilter;
+
     private User userMock;
 
     @BeforeEach
-    void setup(){
+    void setup() throws ServletException, IOException {
         userMock = new User();
         userMock.setId(1L);
         userMock.setName("Test User");
         userMock.setEmail("test@user.com");
         userMock.setPassword("password_hash");
         userMock.setCreationTime(OffsetDateTime.now(ZoneOffset.UTC));
+
+        doAnswer(invocation -> {
+            HttpServletRequest request = invocation.getArgument(0);
+            HttpServletResponse response = invocation.getArgument(1);
+            FilterChain filterChain = invocation.getArgument(2);
+
+            filterChain.doFilter(request, response); // Continua a corrente do Spring
+            return null;
+        }).when(securityFilter).doFilter(any(), any(), any());
     }
 
     @Test
@@ -137,6 +161,16 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$.message").value("Bad request."))
                 .andExpect(jsonPath("$.errors").isEmpty())
         ;
+    }
+
+    @Test
+    @DisplayName("Must return authorized user data.")
+    void mustReturnAuthorizedUserData() throws Exception{
+        var auth = new UsernamePasswordAuthenticationToken(userMock, null, Collections.emptyList());
+        mockMvc.perform(get("/api/v1/users")
+                .with(authentication(auth))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
     }
 
     private Map<String, String> createRequest(){

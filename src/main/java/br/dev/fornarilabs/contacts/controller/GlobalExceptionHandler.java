@@ -3,6 +3,7 @@ package br.dev.fornarilabs.contacts.controller;
 import br.dev.fornarilabs.contacts.dto.BadRequestDTO;
 import br.dev.fornarilabs.contacts.dto.ErrorResponseDTO;
 import br.dev.fornarilabs.contacts.dto.FieldErrorDTO;
+import br.dev.fornarilabs.contacts.service.InvalidCredentials;
 import br.dev.fornarilabs.contacts.service.UserAlreadyExists;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -29,6 +30,17 @@ public class GlobalExceptionHandler {
                 System.currentTimeMillis()
         );
         return new ResponseEntity<>(error, HttpStatus.UNPROCESSABLE_CONTENT);
+    }
+
+    @ExceptionHandler(InvalidCredentials.class)
+    public ResponseEntity<ErrorResponseDTO> handleException(InvalidCredentials e){
+        log.error(e.getMessage());
+        ErrorResponseDTO error = new ErrorResponseDTO(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Unauthorized",
+                System.currentTimeMillis()
+        );
+        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -9,10 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -32,5 +30,14 @@ public class UserController {
         User createdUser = userService.save(user);
         UserResponseDTO response = new UserResponseDTO(createdUser.getId(), createdUser.getName(), createdUser.getEmail(), createdUser.getCreationTime());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<?> getUserData(@AuthenticationPrincipal Object principal){
+        log.info("User data request received.");
+        User user = ControllerUtils.getAuthorizedUser(principal);
+        log.info("User {} is authorized.", user.getId());
+        UserResponseDTO responseDTO = new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getCreationTime());
+        return ResponseEntity.ok(responseDTO);
     }
 }
