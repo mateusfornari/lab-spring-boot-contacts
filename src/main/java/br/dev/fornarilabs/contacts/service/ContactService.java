@@ -23,12 +23,14 @@ public class ContactService {
     private UserRepository userRepository;
 
     public Contact save(Contact contact){
+        if(contactRepository.existsByUserAndEmail(contact.getUser(), contact.getEmail())){
+            throw new ContactAlreadyExists("Contact already exists.");
+        }
         return contactRepository.save(contact);
     }
 
-    public Page<Contact> listUserContacts(Long userId, int page, int size){
-        User user = userRepository.getReferenceById(userId);
-        Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
+    public Page<Contact> listUserContacts(User user, int page, int size){
+        Pageable pageable = PageRequest.of(page, size, Sort.by("name", "creationTime").ascending());
         return contactRepository.findByUser(user, pageable);
     }
 }

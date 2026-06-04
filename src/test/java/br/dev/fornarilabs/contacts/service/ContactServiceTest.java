@@ -25,6 +25,8 @@ import java.util.List;
 public class ContactServiceTest {
 
     private static final String TEST_CONTACT_NAME = "Test Contact";
+    private static final String TEST_CONTACT_EMAIL = "test@contact.com";
+    private static final String TEST_CONTACT_PHONE = "48912345678";
 
     @Mock
     private UserRepository userRepository;
@@ -67,14 +69,30 @@ public class ContactServiceTest {
 
         Page<Contact> page = new PageImpl<>(contactList, pageable, contactList.size());
 
-        when(userRepository.getReferenceById(any(Long.class))).thenReturn(user);
         when(contactRepository.findByUser(any(User.class), any(Pageable.class))).thenReturn(page);
 
-        Page<Contact> result = contactService.listUserContacts(1L, 0, 10);
+        Page<Contact> result = contactService.listUserContacts(user, 0, 10);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
         assertEquals(TEST_CONTACT_NAME, result.getContent().getFirst().getName());
     }
+
+    @Test
+    @DisplayName("Must throw ContactAlreadyExists exception.")
+    void mustThrowContactAlreadyExists(){
+        when(contactRepository.existsByUserAndEmail(any(User.class), any(String.class))).thenReturn(true);
+        User user = new User();
+        user.setId(1L);
+        Contact contact = new Contact();
+        contact.setName(TEST_CONTACT_NAME);
+        contact.setEmail(TEST_CONTACT_EMAIL);
+        contact.setPhoneNumber(TEST_CONTACT_PHONE);
+        contact.setUser(user);
+        assertThrows(ContactAlreadyExists.class, () -> {
+            contactService.save(contact);
+        });
+    }
+
 
 }

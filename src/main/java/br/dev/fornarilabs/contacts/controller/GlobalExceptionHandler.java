@@ -3,6 +3,7 @@ package br.dev.fornarilabs.contacts.controller;
 import br.dev.fornarilabs.contacts.dto.BadRequestDTO;
 import br.dev.fornarilabs.contacts.dto.ErrorResponseDTO;
 import br.dev.fornarilabs.contacts.dto.FieldErrorDTO;
+import br.dev.fornarilabs.contacts.service.ContactAlreadyExists;
 import br.dev.fornarilabs.contacts.service.InvalidCredentials;
 import br.dev.fornarilabs.contacts.service.UserAlreadyExists;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,17 @@ public class GlobalExceptionHandler {
         ErrorResponseDTO error = new ErrorResponseDTO(
                 HttpStatus.UNPROCESSABLE_CONTENT.value(),
                 "User already exists.",
+                System.currentTimeMillis()
+        );
+        return new ResponseEntity<>(error, HttpStatus.UNPROCESSABLE_CONTENT);
+    }
+
+    @ExceptionHandler(ContactAlreadyExists.class)
+    public ResponseEntity<ErrorResponseDTO> handleException(ContactAlreadyExists e){
+        log.error(e.getMessage());
+        ErrorResponseDTO error = new ErrorResponseDTO(
+                HttpStatus.UNPROCESSABLE_CONTENT.value(),
+                "Contact already exists.",
                 System.currentTimeMillis()
         );
         return new ResponseEntity<>(error, HttpStatus.UNPROCESSABLE_CONTENT);
@@ -78,6 +90,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDTO> handleException(Exception e){
         log.error(e.getMessage());
+        e.printStackTrace();
         ErrorResponseDTO error = new ErrorResponseDTO(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Unexpected error.",

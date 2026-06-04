@@ -28,7 +28,7 @@ public class UserController {
         user.setEmail(userData.email());
         user.setPassword(userData.password());
         User createdUser = userService.save(user);
-        UserResponseDTO response = new UserResponseDTO(createdUser.getId(), createdUser.getName(), createdUser.getEmail(), createdUser.getCreationTime());
+        UserResponseDTO response = new UserResponseDTO(createdUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -37,7 +37,7 @@ public class UserController {
         log.info("User data request received.");
         User user = ControllerUtils.getAuthorizedUser(principal);
         log.info("User {} is authorized.", user.getId());
-        UserResponseDTO responseDTO = new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getCreationTime());
+        UserResponseDTO responseDTO = new UserResponseDTO(user);
         return ResponseEntity.ok(responseDTO);
     }
 }

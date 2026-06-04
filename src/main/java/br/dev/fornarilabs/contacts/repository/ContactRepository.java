@@ -9,4 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ContactRepository extends JpaRepository<Contact, Long> {
 
     Page<Contact> findByUser(User user, Pageable pageable);
+
+    boolean existsByUserAndEmail(User user, String email);
 }
